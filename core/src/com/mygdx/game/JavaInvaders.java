@@ -6,7 +6,9 @@ import java.util.Random;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -14,27 +16,88 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
+
+
+
 
 public class JavaInvaders extends ApplicationAdapter {
+    TextButton.TextButtonStyle textButtonStyle;
+    TextButton startButton, exitButton, loadButton1,loadButton2,loadButton3; 
     SpriteBatch batch;
-    Texture img, tNave, tMissile, tEnemy, tEnemy2, tEnemy3, tPowerUp, img_2, img_3;
+    Sprite sprite;
+    Texture img, tNave, tMissile, tEnemy, tEnemy2, tEnemy3, tPowerUp, img_2, img_3,ini, buttonBackgroundTexture;
     private Sprite nave, missile;
     private float posX, posY, velocity, xMissile, yMissile, powerUpSpeed, velocity_missile;
-    private boolean attack, gameover, powerUp_1, powerUp_2, powerUp_3, game_win, isGameStarted;
+    private boolean attack, gameover, powerUp_1, powerUp_2, powerUp_3, game_win, isGameStarted, slotsAdded;
     private Array<Rectangle> powerUps;
     private Array<Enemy> enemies;
-    private long lastEnemyTime;
-    private int score, power, power_enemy, current_level;
+    private long lastEnemyTime, countdownStartTime;
+    private int score, power, current_level, countdownValue;
     private FreeTypeFontGenerator generator;
     private FreeTypeFontGenerator.FreeTypeFontParameter parameter, winParameter, startParameter;
     private BitmapFont bitmap, winFont, startFont;
+    private Stage stage;
+    private long levelChangeDuration = 3000; 
+    private long levelChangeStartTime;
+    private TextButton loadSavedGameButton;
+
+    
+
+
+    private enum GameState {
+        MENU,
+        INITIALIZING,
+        PLAYING,
+        GAME_OVER,
+        LEVEL_2,
+        LEVEL_3,
+        LEVEL_CHANGE,
+        SAVE_MENU,
+        SAVE_EXIT
+    }
+    private GameState gameState;
+
 
     public void create() {
+
+        try {
+            
+
+            slotsAdded = false;
+            textButtonStyle = new TextButton.TextButtonStyle();
+            textButtonStyle.font = new BitmapFont();  // Use uma fonte adequada para seu projeto
+            textButtonStyle.fontColor = Color.WHITE;  // Defina a cor desejada para o texto
+
+    
+        
+
+        stage = new Stage(new ScreenViewport());
+        gameState = GameState.MENU;
+        batch = new SpriteBatch();
+
+        countdownStartTime = TimeUtils.millis();
+        countdownValue = 4;
+       
+    
+
+
+        setupButtons();
+
+
+        Gdx.input.setInputProcessor(stage);
+
+
+
         isGameStarted = false;
         current_level = 1;
+        ini = new Texture("ini.jpg");
         img_3 = new Texture("c.jpg");
         img_2 = new Texture("b.png");
         batch = new SpriteBatch();
@@ -83,99 +146,87 @@ public class JavaInvaders extends ApplicationAdapter {
         gameover = false;
         powerUp_1 = false;
         powerUp_2 = false;
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(1, 0, 0, 1);
-        batch.begin();
+        try {
 
-        if (!isGameStarted) {
-			batch.draw(img, 0, 0);
-            startFont.draw(batch, "Press P to Start", Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2);
-            if (Gdx.input.isKeyPressed(Input.Keys.P)) {
-                isGameStarted = true;
-            }
-        } else {
-            nextLevel();
-            Spaceshoot();
-            moveNave();
-            moveEnemys();
-            movePowerup();
 
-            switch (current_level) {
-                case 1:
-                    batch.draw(img, 0, 0);
-                    break;
-                case 2:
-                    batch.draw(img_2, 0, 0);
-                    break;
-                case 3:
-                    batch.draw(img_3, 0, 0);
-					break;
-                case 4:
-					batch.draw(img_3, 0,0);
-                    winFont.draw(batch, "GAME WIN", 750, 700);
-                    bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
-					if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
-						current_level = 1;
-						score = 0;
-						power = 3;
-						posX = Gdx.graphics.getWidth() / 2;
-						posY = 0;
-						gameover = false;
-						enemies.clear();
-						powerUps.clear();
-						game_win = false;
-					}
-                    break;
-            }
+        switch (gameState) {
+            case MENU:
+                renderMenu();
+                break;
+            case SAVE_MENU:
+                renderSaveMenu();
+            
+                break;
 
-            if (!gameover ) {
-                if (attack) {
-                    batch.draw(missile, xMissile, yMissile);
-                }
-                batch.draw(nave, posX, posY);
+            case INITIALIZING:
+                renderinitialgame();
+                break;    
+            
+            case PLAYING:
+                renderGame();
+                removeSaveMenuButtons();
 
-                for (Enemy enemy : enemies) {
-                    batch.draw(tEnemy, enemy.rectangle.x, enemy.rectangle.y);
-                }
 
-                bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
-                bitmap.draw(batch, "Vida: " + power, Gdx.graphics.getWidth() - 150, Gdx.graphics.getHeight() - 20);
-            } else {
-                bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
-                bitmap.draw(batch, "GAME OVER", 890, 600);
-                if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
-                    current_level = 1;
-                    score = 0;
-                    power = 3;
-                    posX = Gdx.graphics.getWidth() / 2;
-                    posY = 0;
-                    gameover = false;
-                    enemies.clear();
-                    powerUps.clear();
-                    game_win = false;
-                }
-            }
+                break;
+            case LEVEL_CHANGE:
 
-            for (Rectangle powerUp : powerUps) {
-                batch.draw(tPowerUp, powerUp.x, powerUp.y);
-            }
-        }
+            renderLevelChange();
+            break;
+               
 
-        batch.end();
+            case GAME_OVER:
+                renderGameOver();
+                break;
+            default:
+                break;
+        
+    }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
     }
 
     @Override
     public void dispose() {
-        batch.dispose();
-        img.dispose();
-        tNave.dispose();
-        generator.dispose();
-        bitmap.dispose();
-        winFont.dispose();
-        startFont.dispose();
+        if (stage != null) {
+            stage.dispose();
+            stage = null;
+        }
+        if (batch != null) {
+            batch.dispose();
+            batch = null;
+        }
+        if (img != null) {
+            img.dispose();
+            img = null;
+        }
+        if (tNave != null) {
+            tNave.dispose();
+            tNave = null;
+        }
+        if (generator != null) {
+            generator.dispose();
+            generator = null;
+        }
+        if (bitmap != null) {
+            bitmap.dispose();
+            bitmap = null;
+        }
+        if (winFont != null) {
+            winFont.dispose();
+            winFont = null;
+        }
+        if (startFont != null) {
+            startFont.dispose();
+            startFont = null;
+        }
     }
 
     private void moveNave() {
@@ -358,22 +409,297 @@ public class JavaInvaders extends ApplicationAdapter {
 	}
 
 	public void nextLevel() {
-		if( score >= 2 && current_level == 1) {
-			current_level = 2;
+		if( score >= 15 && current_level == 1) {
+			gameState = GameState.LEVEL_CHANGE;
+            current_level = 2;
+            levelChangeStartTime = TimeUtils.millis();
+            saveGame(1);
 		}
-		if(score >=4 && current_level == 2) {
-			current_level = 3;
-			
+		if(score >=35 && current_level == 2) {
+            current_level = 3;
+            gameState = GameState.LEVEL_CHANGE;
+            levelChangeStartTime = TimeUtils.millis();
+            saveGame(1);
 		}
-		if(score >= 5 && current_level == 3){
+		if(score >= 70 && current_level == 3){
 			current_level = 4;
 			game_win = true;
+            saveGame(1);
 		}
 
 
 	}
-	
+    private void renderMenu() {
+        try {
+            stage.act(Gdx.graphics.getDeltaTime()); 
+        
+            stage.getBatch().begin(); 
+            stage.getBatch().draw(ini, 0,0);
+            stage.getBatch().end(); 
+        
+            stage.draw(); 
+            Gdx.input.setInputProcessor(stage);
+    
+            if (startButton.isPressed()) {
+                gameState = GameState.SAVE_MENU;
+                slotsAdded = false;
+            } else if (exitButton.isPressed()) {
+                Gdx.app.exit(); 
+            }else if (loadSavedGameButton.isPressed()) {
+                loadGame(1); 
+                gameState = GameState.PLAYING;
+            }
+          
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+   
+    
 
-	
+        
+    private void renderGame() {
+        ScreenUtils.clear(1, 0, 0, 1);
+        batch.begin();
+            nextLevel();
+            Spaceshoot();
+            moveNave();
+            moveEnemys();
+            movePowerup();
+            switch (current_level) {
+                case 1:
+                    batch.draw(img, 0, 0);
+                    break;
+                case 2:
+                    batch.draw(img_2, 0, 0);
+                    break;
+                case 3:
+                    batch.draw(img_3, 0, 0);
+					break;
+                case 4:
+					batch.draw(img_3, 0,0);
+                    winFont.draw(batch, "GAME WIN", 750, 700);
+                    bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+					if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+						gameState = GameState.MENU;
+					}
+                    break;
+            }
+
+            if (!gameover ) {
+                if (attack) {
+                    batch.draw(missile, xMissile, yMissile);
+                }
+                batch.draw(nave, posX, posY);
+
+                for (Enemy enemy : enemies) {
+                    batch.draw(tEnemy, enemy.rectangle.x, enemy.rectangle.y);
+                }
+
+                bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+                bitmap.draw(batch, "Vida: " + power, Gdx.graphics.getWidth() - 150, Gdx.graphics.getHeight() - 20);
+            } else {
+                gameState = GameState.GAME_OVER;
+
+                }
+            
+
+            for (Rectangle powerUp : powerUps) {
+                batch.draw(tPowerUp, powerUp.x, powerUp.y);
+            }
+        
+        batch.end();
+
+    }
+
+    private void renderGameOver() {
+        try {
+            batch.begin();
+            bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+            bitmap.draw(batch, "GAME OVER", 890, 600);
+            if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+                
+                gameState = GameState.MENU;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        batch.end();
+    }
+
+    private void resetGame() {
+        score = 0;
+        power = 3;
+        current_level = 1;
+        posX = Gdx.graphics.getWidth() / 2;
+        posY = 0;
+        clearAllSaves();
+    }
+
+    private void clearAllSaves() {
+        for (int i = 1; i <= 3; i++) {
+            Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + i);
+            prefs.clear();
+            prefs.flush();
+        }
+    }
+
+    private void renderLevelChange() {
+        ScreenUtils.clear(0.75f, 0.75f, 0.75f, 1);
+        batch.begin();
+
+        bitmap.draw(batch, "LEVEL "+ current_level, 890, 600);
+        bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+
+        batch.end();    
+        long currentTime = TimeUtils.millis();
+    if (currentTime - levelChangeStartTime >= levelChangeDuration) {
+        gameState = GameState.PLAYING;
+    }
 }
- 
+    private void renderinitialgame() {
+        ScreenUtils.clear(0,0,0,0);
+        batch.begin();
+
+
+        long currentTime = TimeUtils.millis();
+        long elapsed = currentTime - countdownStartTime;
+
+        if (elapsed >= 1000) { 
+            countdownValue--;
+            countdownStartTime = currentTime;
+        }
+    
+        if (countdownValue > 0) {
+            bitmap.draw(batch, String.valueOf(countdownValue), Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2);
+        } else {
+            gameState = GameState.PLAYING;
+        }
+    
+        batch.end();
+    }
+        private void saveGame(int slot) {
+        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
+         prefs.putInteger("score", score);
+         prefs.putInteger("power", power);
+         prefs.putInteger("current_level", current_level);
+         prefs.putFloat("posX", posX);
+         prefs.putFloat("posY", posY);
+         prefs.flush();
+        }
+
+         private void loadGame(int slot) {
+           
+            Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
+            score = prefs.getInteger("score", 0);
+            power = prefs.getInteger("power", 3);
+            current_level = prefs.getInteger("current_level", 1);
+            posX = prefs.getFloat("posX", Gdx.graphics.getWidth() / 2);
+            posY = prefs.getFloat("posY", 0);
+          
+        }
+        private void renderSaveMenu() {
+             Gdx.gl.glClearColor(0, 0, 0.2f, 1);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            addSaveMenuButtons();
+
+             stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+            stage.draw();
+
+            batch.begin();
+            ScreenUtils.clear(0.5f, 0.5f, 0.5f, 1);
+            batch.draw(ini,0,0);
+
+            bitmap.draw(batch, "Press 1 to Save in Slot 1", 100, 400);
+            bitmap.draw(batch, "Press 2 to Save in Slot 2", 100, 300);
+            bitmap.draw(batch, "Press 3 to Save in Slot 3", 100, 200);
+
+
+            batch.end();
+        
+            if (Gdx.input.isKeyPressed(Input.Keys.NUM_1)) {
+                saveGame(1);
+                gameState = GameState.INITIALIZING;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.NUM_2)) {
+                saveGame(2);
+                gameState = GameState.INITIALIZING;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.NUM_3)) {
+                saveGame(3);
+                gameState = GameState.INITIALIZING;
+            }
+
+
+            if (!slotsAdded) {
+               addSaveMenuButtons();
+                slotsAdded = true;
+            }
+        }
+        
+
+
+        private void setupButtons() {
+        
+            if (startButton == null) {
+                startButton = new TextButton("Start Game", textButtonStyle);
+                startButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 + 50);
+                stage.addActor(startButton);
+            }
+        
+            if (exitButton == null) {
+                exitButton = new TextButton("Exit Game", textButtonStyle);
+                exitButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 - 50);
+                stage.addActor(exitButton);
+            }
+            if (loadSavedGameButton == null) {
+                loadSavedGameButton = new TextButton("Load Saved Game", textButtonStyle);
+                loadSavedGameButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 - 150);
+                stage.addActor(loadSavedGameButton);
+            }
+
+            stage.addActor(startButton);
+            stage.addActor(exitButton);
+            stage.addActor(loadSavedGameButton);
+        
+
+        
+        }
+    
+        
+        private void addSaveMenuButtons() {
+            if (loadButton1 == null) {
+                loadButton1 = new TextButton("Load Slot 1", textButtonStyle);
+                loadButton1.setPosition(100, 400);
+                stage.addActor(loadButton1);
+            }
+        
+            if (loadButton2 == null) {
+                loadButton2 = new TextButton("Load Slot 2", textButtonStyle);
+                loadButton2.setPosition(100, 300);
+                stage.addActor(loadButton2);
+            }
+        
+            if (loadButton3 == null) {
+                loadButton3 = new TextButton("Load Slot 3", textButtonStyle);
+                loadButton3.setPosition(100, 200);
+                stage.addActor(loadButton3);
+            }
+        }
+        
+        private void removeSaveMenuButtons() {
+            if (loadButton1 != null) {
+                loadButton1.remove();
+                loadButton1 = null;
+            }
+            if (loadButton2 != null) {
+                loadButton2.remove();
+                loadButton2 = null;
+            }
+            if (loadButton3 != null) {
+                loadButton3.remove();
+                loadButton3 = null;
+            }
+        }
+
+
+}

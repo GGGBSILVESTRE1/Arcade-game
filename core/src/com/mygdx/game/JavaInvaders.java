@@ -16,9 +16,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -32,24 +35,24 @@ public class JavaInvaders extends ApplicationAdapter {
     TextButton startButton, exitButton, loadButton1,loadButton2,loadButton3; 
     SpriteBatch batch;
     Sprite sprite;
-    Texture img, tNave, tMissile, tEnemy, tEnemy2, tEnemy3, tPowerUp, img_2, img_3,ini, buttonBackgroundTexture;
+    Texture img, tNave, tMissile, tEnemy, tEnemy2, tEnemy3, tPowerUp, img_2, img_3,ini,tNave2, buttonBackgroundTexture, tMissile2;
     private Sprite nave, missile;
     private float posX, posY, velocity, xMissile, yMissile, powerUpSpeed, velocity_missile;
     private boolean attack, gameover, powerUp_1, powerUp_2, powerUp_3, game_win, isGameStarted, slotsAdded;
     private Array<Rectangle> powerUps;
     private Array<Enemy> enemies;
     private long lastEnemyTime, countdownStartTime;
-    private int score, power, current_level, countdownValue;
+    private int score, power, current_level, countdownValue, isGamemultiplayer;
     private FreeTypeFontGenerator generator;
     private FreeTypeFontGenerator.FreeTypeFontParameter parameter, winParameter, startParameter;
     private BitmapFont bitmap, winFont, startFont;
     private Stage stage;
     private long levelChangeDuration = 3000; 
     private long levelChangeStartTime;
-    private TextButton loadSavedGameButton;
-
-    
-
+    private TextButton loadSavedGameButton, multiplayerGameButton;
+    private Sprite nave2, missile2;
+    private float posX2, posY2, xMissile2, yMissile2;
+    private boolean attack2;
 
     private enum GameState {
         MENU,
@@ -60,14 +63,23 @@ public class JavaInvaders extends ApplicationAdapter {
         LEVEL_3,
         LEVEL_CHANGE,
         SAVE_MENU,
-        SAVE_EXIT
+        SAVE_EXIT,
+        MULTIPLAYER
     }
+
     private GameState gameState;
 
 
     public void create() {
+            isGamemultiplayer = 0;
 
-        try {
+            tNave2 = new Texture("Nave.png");
+            nave2 = new Sprite(tNave2);
+
+            posX2 = 1000;  // Posição inicial da segunda nave
+            posY2 = 0;
+            attack2 = false;
+
             
 
             slotsAdded = false;
@@ -110,7 +122,9 @@ public class JavaInvaders extends ApplicationAdapter {
         velocity_missile = 20;
         attack = false;
         tMissile = new Texture("bala.png");
+        tMissile2 = new Texture("bala.png");
         missile = new Sprite(tMissile);
+        missile2 = new Sprite(tMissile2);
         nave.setPosition(posX, posY);
         tPowerUp = new Texture("powerup.png");
         tEnemy3 = new Texture("enemy3.png");
@@ -146,15 +160,14 @@ public class JavaInvaders extends ApplicationAdapter {
         gameover = false;
         powerUp_1 = false;
         powerUp_2 = false;
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+       
     }
 
     @Override
     public void render() {
         try {
 
+            if (gameState != null) {
 
         switch (gameState) {
             case MENU:
@@ -184,10 +197,20 @@ public class JavaInvaders extends ApplicationAdapter {
             case GAME_OVER:
                 renderGameOver();
                 break;
+
+            case MULTIPLAYER:
+                renderGameMultiplayer();
+                removeSaveMenuButtons();
+                break;
+
             default:
                 break;
+        }
+        } else {
+            System.out.println("game state is NULL");
+        }
         
-    }
+    
     } catch (Exception e) {
         e.printStackTrace();
     }
@@ -207,9 +230,52 @@ public class JavaInvaders extends ApplicationAdapter {
             img.dispose();
             img = null;
         }
+        if (tNave2 != null){
+        tNave2.dispose();
+        tNave2 = null;
+        }
+
         if (tNave != null) {
             tNave.dispose();
             tNave = null;
+        }
+        if (tMissile2 != null) {
+            tMissile2.dispose();
+            tMissile2 = null;
+            
+        }
+
+        if (tMissile != null) {
+            tMissile.dispose();
+            tMissile = null;
+        }
+        if (tEnemy != null) {
+            tEnemy.dispose();
+            tEnemy = null;
+        }
+        if (tEnemy2 != null) {
+            tEnemy2.dispose();
+            tEnemy2 = null;
+        }
+        if (tEnemy3 != null) {
+            tEnemy3.dispose();
+            tEnemy3 = null;
+        }
+        if (tPowerUp != null) {
+            tPowerUp.dispose();
+            tPowerUp = null;
+        }
+        if (img_2 != null) {
+            img_2.dispose();
+            img_2 = null;
+        }
+        if (img_3 != null) {
+            img_3.dispose();
+            img_3 = null;
+        }
+        if (ini != null) {
+            ini.dispose();
+            ini = null;
         }
         if (generator != null) {
             generator.dispose();
@@ -259,6 +325,50 @@ public class JavaInvaders extends ApplicationAdapter {
         }
     }
 
+    private void moveNave2() {
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            if (posX2 < Gdx.graphics.getWidth() - 90) {
+                posX2 += velocity;
+            }
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            if (posX2 > 0) {
+                posX2 -= velocity;
+            }
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            if (posY2 < Gdx.graphics.getHeight() - 90) {
+                posY2 += velocity;
+            }
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            if (posY2 > 0) {
+                posY2 -= velocity;
+            }
+        }
+    
+        if (posX2 > 1810) {
+            posX2 = 1810;
+        }
+        if (posY2 < 90) {
+            posY2 = 90;
+        }
+    }
+    private void Spaceshoot2() {
+        if (Gdx.input.isKeyPressed(Input.Keys.X) && !attack2) {
+            xMissile2 = posX2;
+            yMissile2 = posY2;
+            attack2 = true;
+        }
+        if (attack2) {
+            yMissile2 += velocity_missile;
+        }
+        if (yMissile2 > Gdx.graphics.getHeight()) {
+            attack2 = false;
+        }
+    }
+    
+
     private void Spaceshoot() {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE) && !attack) {
             xMissile = posX;
@@ -307,7 +417,7 @@ public class JavaInvaders extends ApplicationAdapter {
                 iter.remove();
             }
             if (collide(powerUp.x, powerUp.y, powerUp.getWidth(), powerUp.height, posX, posY, nave.getWidth(),
-                    nave.getHeight())) {
+                    nave.getHeight()) || collide(powerUp.x, powerUp.y, powerUp.getWidth(), powerUp.height, posX2, posY2, nave2.getWidth(), nave2.getHeight())) {
                 iter.remove();
                 Random random = new Random();
 
@@ -335,72 +445,101 @@ public class JavaInvaders extends ApplicationAdapter {
 		}
 	}
 
-	private void moveEnemys() {
-		Random rand = new Random();
-
-	switch (current_level) {
-		case 1:
-		if ((TimeUtils.nanoTime() - lastEnemyTime > 2000000000)){
-			this.spawnEnemies();
-		}
-			break;
-		case 2:
-		if ((TimeUtils.nanoTime() - lastEnemyTime > 1500000000)){
-			this.spawnEnemies();
-		}
-			break;
-		case 3:
-		if ((TimeUtils.nanoTime() - lastEnemyTime > 1000000000)){
-			this.spawnEnemies();
-		}
-
-
-			break;
-	}	
-    
-
-    for (Iterator<Enemy> iter = enemies.iterator(); iter.hasNext();) {
-        Enemy enemy = iter.next();
-        enemy.rectangle.y -= 3;
-
-        // Colisão com o míssil
-        if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.getWidth(), enemy.rectangle.height, 
-                    xMissile, yMissile, missile.getWidth(), missile.getHeight()) && attack && !game_win) {
-
-            enemy.health--;
-
-            if (enemy.health <= 0) {
-                ++score;
-                iter.remove();
+	
+        private void moveEnemys() {
+            Random rand = new Random();
+        try {
+            switch (current_level) {
+                case 1:
+                    if ((TimeUtils.nanoTime() - lastEnemyTime > 2000000000)) {
+                        this.spawnEnemies();
+                    }
+                    break;
+                case 2:
+                    if ((TimeUtils.nanoTime() - lastEnemyTime > 1500000000)) {
+                        this.spawnEnemies();
+                    }
+                    break;
+                case 3:
+                    if ((TimeUtils.nanoTime() - lastEnemyTime > 1000000000)) {
+                        this.spawnEnemies();
+                    }
+                    break;
             }
-            attack = false;
-
-            if (rand.nextInt(7) < 1) {
-                spawnPowerup();
+        
+            for (Iterator<Enemy> iter = enemies.iterator(); iter.hasNext();) {
+                Enemy enemy = iter.next();
+                enemy.rectangle.y -= 3;
+        
+                // Colisão com o míssil da primeira nave
+                if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.getWidth(), enemy.rectangle.height, 
+                            xMissile, yMissile, missile.getWidth(), missile.getHeight()) && attack && !game_win) {
+        
+                    enemy.health--;
+        
+                    if (enemy.health <= 0) {
+                        ++score;
+                        iter.remove();
+                    }
+                    attack = false;
+        
+                    if (rand.nextInt(7) < 1) {
+                        spawnPowerup();
+                    }
+        
+                // Colisão com a primeira nave
+                } else if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.width, enemy.rectangle.height, 
+                                   posX, posY, nave.getWidth(), nave.getHeight()) && !gameover && !game_win) {
+                    --power;
+        
+                    if (power <= 0) {
+                        gameover = true;
+                    }
+                    iter.remove();
+                }
+        
+                // Colisão com o míssil da segunda nave
+                if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.getWidth(), enemy.rectangle.height, 
+                            xMissile2, yMissile2, missile2.getWidth(), missile2.getHeight()) && attack2 && !game_win) {
+        
+                    enemy.health--;
+        
+                    if (enemy.health <= 0) {
+                        ++score;
+                        iter.remove();
+                    }
+                    attack2 = false;
+        
+                    if (rand.nextInt(7) < 1) {
+                        spawnPowerup();
+                    }
+        
+                // Colisão com a segunda nave
+                } else if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.width, enemy.rectangle.height, 
+                                   posX2, posY2, nave2.getWidth(), nave2.getHeight()) && !gameover && !game_win) {
+                    --power;
+        
+                    if (power <= 0) {
+                        gameover = true;
+                    }
+                    iter.remove();
+                }
+        
+                if (enemy.rectangle.y + tEnemy.getHeight() < 0 && !game_win) {
+                    iter.remove();
+                    power--;
+                    if (power == 0) {
+                        gameover = true;
+                    }
+                }
+        
             }
+        }catch (Exception e) {
+                e.printStackTrace();
 
-        // Colisão com a nave
-        } else if (collide(enemy.rectangle.x, enemy.rectangle.y, enemy.rectangle.width, enemy.rectangle.height, 
-                           posX, posY, nave.getWidth(), nave.getHeight()) && !gameover && !game_win) {
-            --power;
-
-            if (power <= 0) {
-                gameover = true;
             }
-            iter.remove();
         }
-
-        if (enemy.rectangle.y + tEnemy.getHeight() < 0 && !game_win) {
-            iter.remove();
-            power--;
-            if (power == 0) {
-                gameover = true;
-				}
-			}
-
-		}
-
-	}
+        
 	private boolean collide(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2 ){
 		if( x1 + w1 > x2 && x1 <x2 + w2 && y1 + h1 > y2 && y1 < y2 + h2  ){
 			return true;
@@ -410,7 +549,7 @@ public class JavaInvaders extends ApplicationAdapter {
 
 	public void nextLevel() {
 		if( score >= 15 && current_level == 1) {
-			gameState = GameState.LEVEL_CHANGE;
+            gameState = GameState.LEVEL_CHANGE;
             current_level = 2;
             levelChangeStartTime = TimeUtils.millis();
             saveGame(1);
@@ -431,10 +570,10 @@ public class JavaInvaders extends ApplicationAdapter {
 	}
     private void renderMenu() {
         try {
-            stage.act(Gdx.graphics.getDeltaTime()); 
+            stage.act(Gdx.graphics.getDeltaTime());
         
             stage.getBatch().begin(); 
-            stage.getBatch().draw(ini, 0,0);
+            stage.getBatch().draw(ini, 0, 0);
             stage.getBatch().end(); 
         
             stage.draw(); 
@@ -444,10 +583,12 @@ public class JavaInvaders extends ApplicationAdapter {
                 gameState = GameState.SAVE_MENU;
                 slotsAdded = false;
             } else if (exitButton.isPressed()) {
-                Gdx.app.exit(); 
-            }else if (loadSavedGameButton.isPressed()) {
+                Gdx.app.exit();
+            } else if (loadSavedGameButton.isPressed()) {
                 loadGame(1); 
-                gameState = GameState.PLAYING;
+                gameState = GameState.INITIALIZING;
+            } else if (multiplayerGameButton.isPressed() ){
+                gameState = GameState.MULTIPLAYER;
             }
           
         } catch (Exception e) {
@@ -462,55 +603,64 @@ public class JavaInvaders extends ApplicationAdapter {
     private void renderGame() {
         ScreenUtils.clear(1, 0, 0, 1);
         batch.begin();
+        try {
+            nave.draw(batch);
+        
+        if (!gameover) {
             nextLevel();
             Spaceshoot();
             moveNave();
             moveEnemys();
             movePowerup();
+            
             switch (current_level) {
                 case 1:
                     batch.draw(img, 0, 0);
                     break;
                 case 2:
                     batch.draw(img_2, 0, 0);
+                    tEnemy = tEnemy2;
                     break;
                 case 3:
                     batch.draw(img_3, 0, 0);
-					break;
+                    tEnemy = tEnemy3;
+                    break;
                 case 4:
-					batch.draw(img_3, 0,0);
+                    batch.draw(img_3, 0, 0);
                     winFont.draw(batch, "GAME WIN", 750, 700);
                     bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
-					if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
-						gameState = GameState.MENU;
-					}
+                    if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+                        gameState = GameState.MENU;
+                    }
                     break;
             }
-
-            if (!gameover ) {
+            
+            if (!gameover) {
                 if (attack) {
                     batch.draw(missile, xMissile, yMissile);
                 }
                 batch.draw(nave, posX, posY);
-
+                
                 for (Enemy enemy : enemies) {
                     batch.draw(tEnemy, enemy.rectangle.x, enemy.rectangle.y);
                 }
-
+                
                 bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
                 bitmap.draw(batch, "Vida: " + power, Gdx.graphics.getWidth() - 150, Gdx.graphics.getHeight() - 20);
             } else {
                 gameState = GameState.GAME_OVER;
-
-                }
+            }
             
-
             for (Rectangle powerUp : powerUps) {
                 batch.draw(tPowerUp, powerUp.x, powerUp.y);
             }
+        } else {
+            gameState = GameState.GAME_OVER;
+        } }catch (Exception e) {
+            e.printStackTrace();
+        }
         
         batch.end();
-
     }
 
     private void renderGameOver() {
@@ -519,8 +669,8 @@ public class JavaInvaders extends ApplicationAdapter {
             bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
             bitmap.draw(batch, "GAME OVER", 890, 600);
             if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
-                
                 gameState = GameState.MENU;
+                resetGame();  // Resetar o jogo quando voltar ao menu principal
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -534,9 +684,13 @@ public class JavaInvaders extends ApplicationAdapter {
         current_level = 1;
         posX = Gdx.graphics.getWidth() / 2;
         posY = 0;
+        attack = false;
+        gameover = false;
+        game_win = false;
+        enemies.clear();
+        powerUps.clear();
         clearAllSaves();
     }
-
     private void clearAllSaves() {
         for (int i = 1; i <= 3; i++) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + i);
@@ -555,50 +709,88 @@ public class JavaInvaders extends ApplicationAdapter {
         batch.end();    
         long currentTime = TimeUtils.millis();
     if (currentTime - levelChangeStartTime >= levelChangeDuration) {
-        gameState = GameState.PLAYING;
+        switch (isGamemultiplayer) {
+            case 0:
+                gameState = GameState.PLAYING;
+                
+                break;
+            case 1:
+                gameState = GameState.MULTIPLAYER;
+        
+            default:
+                break;
+        }
     }
 }
     private void renderinitialgame() {
-        ScreenUtils.clear(0,0,0,0);
+        ScreenUtils.clear(1, 0, 0, 1);
         batch.begin();
-
-
-        long currentTime = TimeUtils.millis();
-        long elapsed = currentTime - countdownStartTime;
-
-        if (elapsed >= 1000) { 
-            countdownValue--;
-            countdownStartTime = currentTime;
-        }
-    
-        if (countdownValue > 0) {
-            bitmap.draw(batch, String.valueOf(countdownValue), Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2);
-        } else {
-            gameState = GameState.PLAYING;
-        }
-    
+        startFont.draw(batch, "Level " + current_level, Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 + 50);
+        startFont.draw(batch, "Prepare-se para iniciar o jogo", Gdx.graphics.getWidth() / 2 - 300, Gdx.graphics.getHeight() / 2);
         batch.end();
-    }
-        private void saveGame(int slot) {
-        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
-         prefs.putInteger("score", score);
-         prefs.putInteger("power", power);
-         prefs.putInteger("current_level", current_level);
-         prefs.putFloat("posX", posX);
-         prefs.putFloat("posY", posY);
-         prefs.flush();
+
+        // Defina a textura do inimigo com base no nível atual
+        switch (current_level) {
+            case 1:
+                tEnemy = new Texture("enemy1.png");
+                break;
+            case 2:
+                tEnemy = new Texture("enemy2.png");
+                break;
+            case 3:
+                tEnemy = new Texture("enemy3.png");
+                break;
+            default:
+                tEnemy = new Texture("enemy1.png");
+                break;
         }
 
-         private void loadGame(int slot) {
-           
+        if (!isGameStarted) {
+            countdownStartTime = TimeUtils.millis();
+            isGameStarted = true;
+        }
+
+        if (TimeUtils.timeSinceMillis(countdownStartTime) < levelChangeDuration) {
+            return;
+        }
+
+        if (TimeUtils.timeSinceMillis(countdownStartTime) >= levelChangeDuration) {
+            gameState = GameState.PLAYING;
+            isGameStarted = false;
+        }
+    }
+
+        private void saveGame(int slot) {
+            Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
+            prefs.putInteger("score", score);
+            prefs.putInteger("power", power);
+            prefs.putInteger("current_level", current_level);
+            prefs.putFloat("posX", posX);
+            prefs.putFloat("posY", posY);
+            prefs.flush();
+        }
+
+        private void loadGame(int slot) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
             score = prefs.getInteger("score", 0);
             power = prefs.getInteger("power", 3);
             current_level = prefs.getInteger("current_level", 1);
             posX = prefs.getFloat("posX", Gdx.graphics.getWidth() / 2);
             posY = prefs.getFloat("posY", 0);
-          
+            
+            // Restaurar o estado do jogo
+            gameover = (power <= 0);
+            game_win = (current_level == 4 && score >= 70);
+            
+            if (gameover) {
+                gameState = GameState.GAME_OVER;
+            } else if (game_win) {
+                gameState = GameState.LEVEL_CHANGE; // Ou outro estado apropriado
+            } else {
+                gameState = GameState.INITIALIZING; // Alterar para INITIALIZING para preparar o jogo antes de jogar
+            }
         }
+
         private void renderSaveMenu() {
              Gdx.gl.glClearColor(0, 0, 0.2f, 1);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -620,7 +812,7 @@ public class JavaInvaders extends ApplicationAdapter {
         
             if (Gdx.input.isKeyPressed(Input.Keys.NUM_1)) {
                 saveGame(1);
-                gameState = GameState.INITIALIZING;
+                gameState = GameState.INITIALIZING; // Assegurar que o estado do jogo seja atualizado
             } else if (Gdx.input.isKeyPressed(Input.Keys.NUM_2)) {
                 saveGame(2);
                 gameState = GameState.INITIALIZING;
@@ -628,24 +820,17 @@ public class JavaInvaders extends ApplicationAdapter {
                 saveGame(3);
                 gameState = GameState.INITIALIZING;
             }
-
-
-            if (!slotsAdded) {
-               addSaveMenuButtons();
-                slotsAdded = true;
-            }
         }
         
 
 
         private void setupButtons() {
-        
             if (startButton == null) {
                 startButton = new TextButton("Start Game", textButtonStyle);
                 startButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 + 50);
                 stage.addActor(startButton);
             }
-        
+    
             if (exitButton == null) {
                 exitButton = new TextButton("Exit Game", textButtonStyle);
                 exitButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 - 50);
@@ -656,13 +841,31 @@ public class JavaInvaders extends ApplicationAdapter {
                 loadSavedGameButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 - 150);
                 stage.addActor(loadSavedGameButton);
             }
+            if (multiplayerGameButton == null ) {
+                multiplayerGameButton = new TextButton("Multiplayer", textButtonStyle);
+                multiplayerGameButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 - 250);
 
+            }
+            stage.addActor(multiplayerGameButton);
             stage.addActor(startButton);
             stage.addActor(exitButton);
             stage.addActor(loadSavedGameButton);
-        
-
-        
+    
+            startButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    gameState = GameState.SAVE_MENU;
+                    slotsAdded = false;
+                }
+            });
+    
+            loadSavedGameButton.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    loadGame(1); 
+                    gameState = GameState.INITIALIZING;
+                }
+            });
         }
     
         
@@ -701,5 +904,130 @@ public class JavaInvaders extends ApplicationAdapter {
             }
         }
 
+        private void renderGameMultiplayer() {
+            ScreenUtils.clear(0, 0, 0, 1);
+            batch.begin();
+            try {
+                isGamemultiplayer = 1;
+                if (!gameover) {
+                    nextLevel();
+                    Spaceshoot();
+                    Spaceshoot2(); // Adiciona o atirar da segunda nave
+                    moveNave();
+                    moveNave2(); // Adiciona o movimento da segunda nave
+                    moveEnemys();
+                    movePowerup();
+        
+                    if (nave != null) {
+                        nave.draw(batch);
+                    } else {
+                        System.out.println("Nave is null");
+                    }
+        
+                    if (nave2 != null) {
+                        nave2.draw(batch);
+                    } else {
+                        System.out.println("Nave2 is null");
+                    }
+        
+                    switch (current_level) {
+                        case 1:
+                            if (img != null) {
+                                batch.draw(img, 0, 0);
+                            } else {
+                                System.out.println("Image 1 is null");
+                            }
+                            break;
+                        case 2:
+                            if (img_2 != null) {
+                                batch.draw(img_2, 0, 0);
+                                tEnemy = tEnemy2;
+                            } else {
+                                System.out.println("Image 2 is null");
+                            }
+                            break;
+                        case 3:
+                            if (img_3 != null) {
+                                batch.draw(img_3, 0, 0);
+                                tEnemy = tEnemy3;
+                            } else {
+                                System.out.println("Image 3 is null");
+                            }
+                            break;
+                        case 4:
+                            if (img_3 != null) {
+                                batch.draw(img_3, 0, 0);
+                            } else {
+                                System.out.println("Image 3 is null");
+                            }
+                            if (winFont != null) {
+                                winFont.draw(batch, "GAME WIN", 750, 700);
+                            } else {
+                                System.out.println("WinFont is null");
+                            }
+                            if (bitmap != null) {
+                                bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+                            } else {
+                                System.out.println("Bitmap is null");
+                            }
+                            if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+                                gameState = GameState.MENU;
+                            }
+                            break;
+                    }
+        
+                    if (attack) {
+                        if (missile != null) {
+                            batch.draw(missile, xMissile, yMissile);
+                        } else {
+                            System.out.println("Missile is null");
+                        }
+                    }
+                    if (attack2) {
+                        if (missile2 != null) {
+                            batch.draw(missile2, xMissile2, yMissile2);
+                        } else {
+                            System.out.println("Missile2 is null");
+                        }
+                    }
+                    if (nave != null) {
+                        batch.draw(nave, posX, posY);
+                    }
+                    if (nave2 != null) {
+                        batch.draw(nave2, posX2, posY2);
+                    }
+        
+                    for (Enemy enemy : enemies) {
+                        if (enemy != null && tEnemy != null) {
+                            batch.draw(tEnemy, enemy.rectangle.x, enemy.rectangle.y);
+                        } else {
+                            System.out.println("Enemy or tEnemy is null");
+                        }
+                    }
+        
+                    if (bitmap != null) {
+                        bitmap.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+                        bitmap.draw(batch, "Vida: " + power, Gdx.graphics.getWidth() - 150, Gdx.graphics.getHeight() - 20);
+                    }
+        
+                    for (Rectangle powerUp : powerUps) {
+                        if (tPowerUp != null) {
+                            batch.draw(tPowerUp, powerUp.x, powerUp.y);
+                        } else {
+                            System.out.println("tPowerUp is null");
+                        }
+                    }
+                } else {
+                    gameState = GameState.GAME_OVER;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                batch.end();
+            }
+        }
 
 }
+
+    
+

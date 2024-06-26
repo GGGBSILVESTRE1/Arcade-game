@@ -1,8 +1,6 @@
 package com.mygdx.game;
-
 import java.util.Iterator;
 import java.util.Random;
-
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -29,7 +27,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 
 
-
+//inicialização da classe principal do jogo
 public class JavaInvaders extends ApplicationAdapter {
     TextButton.TextButtonStyle textButtonStyle;
     TextButton startButton, exitButton, loadButton1,loadButton2,loadButton3; 
@@ -54,6 +52,10 @@ public class JavaInvaders extends ApplicationAdapter {
     private float posX2, posY2, xMissile2, yMissile2;
     private boolean attack2;
 
+    /**
+ * Classe principal do jogo JavaInvaders.
+ */
+
     private enum GameState {
         MENU,
         INITIALIZING,
@@ -69,10 +71,14 @@ public class JavaInvaders extends ApplicationAdapter {
 
     private GameState gameState;
 
-
+    /**
+     * Método de criação do jogo.
+     */
     public void create() {
+            // avaliar se o jogo é multiplayer 
             isGamemultiplayer = 0;
 
+            //inicialização da nave2 e sua textura 
             tNave2 = new Texture("Nave.png");
             nave2 = new Sprite(tNave2);
 
@@ -81,15 +87,15 @@ public class JavaInvaders extends ApplicationAdapter {
             attack2 = false;
 
             
-
+            
             slotsAdded = false;
             textButtonStyle = new TextButton.TextButtonStyle();
-            textButtonStyle.font = new BitmapFont();  // Use uma fonte adequada para seu projeto
-            textButtonStyle.fontColor = Color.WHITE;  // Defina a cor desejada para o texto
+            textButtonStyle.font = new BitmapFont();
+            textButtonStyle.fontColor = Color.WHITE;  // Definição da cor das fontees
 
     
         
-
+        // inicialização dos estados, começando com estado igual MENU
         stage = new Stage(new ScreenViewport());
         gameState = GameState.MENU;
         batch = new SpriteBatch();
@@ -99,14 +105,13 @@ public class JavaInvaders extends ApplicationAdapter {
        
     
 
-
         setupButtons();
 
 
         Gdx.input.setInputProcessor(stage);
 
 
-
+        //parametro para inicialização do jogo
         isGameStarted = false;
         current_level = 1;
         ini = new Texture("ini.jpg");
@@ -121,11 +126,13 @@ public class JavaInvaders extends ApplicationAdapter {
         velocity = 10;
         velocity_missile = 20;
         attack = false;
+        //inicialização das texturas do projétil da nave 1 e nave 2
         tMissile = new Texture("bala.png");
         tMissile2 = new Texture("bala.png");
         missile = new Sprite(tMissile);
         missile2 = new Sprite(tMissile2);
         nave.setPosition(posX, posY);
+        //inicialização das texturas powerup e inimigos 
         tPowerUp = new Texture("powerup.png");
         tEnemy3 = new Texture("enemy3.png");
         tEnemy2 = new Texture("enemy2.png");
@@ -164,11 +171,14 @@ public class JavaInvaders extends ApplicationAdapter {
     }
 
     @Override
+/**
+     * Método para renderizar as telas do jogo.
+     */    
     public void render() {
         try {
-
+                
             if (gameState != null) {
-
+                // switch para mudanças das telas, tomando o argumento "gameState" que é alterado durante o código para mudança de tela 
         switch (gameState) {
             case MENU:
                 renderMenu();
@@ -217,6 +227,30 @@ public class JavaInvaders extends ApplicationAdapter {
     }
 
     @Override
+    /**
+ * Libera todos os recursos alocados pelo jogo.
+ *
+ * Este método deve ser chamado para garantir que todos os recursos sejam
+ * corretamente liberados da memória quando não forem mais necessários.
+ * Ele verifica se cada recurso é diferente de null antes de chamar o método
+ * dispose e, em seguida, define a referência para null para facilitar o
+ * gerenciamento de memória.
+ *
+ * Recursos liberados:
+ * - stage: o palco do jogo.
+ * - batch: o sprite batch.
+ * - img, img_2, img_3: texturas de imagem.
+ * - tNave, tNave2: texturas da nave.
+ * - tMissile, tMissile2: texturas dos mísseis.
+ * - tEnemy, tEnemy2, tEnemy3: texturas dos inimigos.
+ * - tPowerUp: textura dos power-ups.
+ * - ini: recurso inicializador.
+ * - generator: gerador de fontes.
+ * - bitmap, winFont, startFont: fontes bitmap.
+ *
+ * Certifique-se de chamar este método ao finalizar o jogo ou ao
+ * mudar de tela para evitar vazamentos de memória.
+ */
     public void dispose() {
         if (stage != null) {
             stage.dispose();
@@ -294,7 +328,10 @@ public class JavaInvaders extends ApplicationAdapter {
             startFont = null;
         }
     }
-
+   /**
+     * Move a primeira nave com base nas teclas de seta pressionadas.
+     * Restringe o movimento da nave aos limites da tela.
+     */
     private void moveNave() {
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             if (posX < Gdx.graphics.getWidth() - 90) {
@@ -325,6 +362,10 @@ public class JavaInvaders extends ApplicationAdapter {
         }
     }
 
+     /**
+     * Move a segunda nave com base nas teclas WASD pressionadas.
+     * Restringe o movimento da nave aos limites da tela.
+     */
     private void moveNave2() {
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             if (posX2 < Gdx.graphics.getWidth() - 90) {
@@ -354,6 +395,10 @@ public class JavaInvaders extends ApplicationAdapter {
             posY2 = 90;
         }
     }
+     /**
+     * Dispara um míssil da segunda nave quando a tecla 'X' é pressionada.
+     * O míssil continua a se mover para cima até sair da tela.
+     */
     private void Spaceshoot2() {
         if (Gdx.input.isKeyPressed(Input.Keys.X) && !attack2) {
             xMissile2 = posX2;
@@ -368,7 +413,10 @@ public class JavaInvaders extends ApplicationAdapter {
         }
     }
     
-
+    /**
+     * Dispara um míssil da primeira nave quando a tecla 'ESPAÇO' é pressionada.
+     * O míssil continua a se mover para cima até sair da tela.
+     */
     private void Spaceshoot() {
         if (Gdx.input.isKeyPressed(Input.Keys.SPACE) && !attack) {
             xMissile = posX;
@@ -382,16 +430,29 @@ public class JavaInvaders extends ApplicationAdapter {
             attack = false;
         }
     }
+     /**
+     * Classe representando um inimigo.
+     */
 
     private class Enemy {
         Rectangle rectangle;
         int health;
+        /**
+         * Construtor da classe Enemy.
+         * 
+         * @param rectangle O retângulo representando o inimigo.
+         * @param health A saúde do inimigo.
+         */
 
         Enemy(Rectangle rectangle, int health) {
             this.rectangle = rectangle;
             this.health = health;
         }
     }
+        /**
+     * Cria novos inimigos e os adiciona ao jogo.
+     * A frequência dos inimigos depende do nível atual do jogo.
+     */
 
     private void spawnEnemies() {
         if (!game_win && !gameover) {
@@ -402,12 +463,20 @@ public class JavaInvaders extends ApplicationAdapter {
             lastEnemyTime = TimeUtils.nanoTime();
         }
     }
+     /**
+     * Cria novos power-ups e os adiciona ao jogo.
+     */
 
     private void spawnPowerup() {
         Rectangle powerup = new Rectangle(MathUtils.random(0, Gdx.graphics.getWidth() - tPowerUp.getWidth()),
                 Gdx.graphics.getHeight(), tPowerUp.getWidth(), tPowerUp.getHeight());
         powerUps.add(powerup);
     }
+    /**
+     * Move os power-ups para baixo na tela.
+     * Remove os power-ups que saem da tela ou são coletados pelas naves.
+     * Aplica os efeitos dos power-ups quando coletados.
+     */
 
     private void movePowerup() {
         for (Iterator<Rectangle> iter = powerUps.iterator(); iter.hasNext();) {
@@ -445,7 +514,12 @@ public class JavaInvaders extends ApplicationAdapter {
 		}
 	}
 
-	
+
+         /**
+     * Move os inimigos e verifica colisões com os mísseis e as naves.
+     * Remove inimigos que saem da tela ou são destruídos.
+     * Aplica os efeitos das colisões.
+     */
         private void moveEnemys() {
             Random rand = new Random();
         try {
@@ -539,6 +613,19 @@ public class JavaInvaders extends ApplicationAdapter {
 
             }
         }
+         /**
+     * Verifica se há colisão entre dois retângulos.
+     *
+     * @param x1 Coordenada X do primeiro retângulo.
+     * @param y1 Coordenada Y do primeiro retângulo.
+     * @param w1 Largura do primeiro retângulo.
+     * @param h1 Altura do primeiro retângulo.
+     * @param x2 Coordenada X do segundo retângulo.
+     * @param y2 Coordenada Y do segundo retângulo.
+     * @param w2 Largura do segundo retângulo.
+     * @param h2 Altura do segundo retângulo.
+     * @return true se os retângulos colidirem, false caso contrário.
+     */
         
 	private boolean collide(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2 ){
 		if( x1 + w1 > x2 && x1 <x2 + w2 && y1 + h1 > y2 && y1 < y2 + h2  ){
@@ -547,6 +634,10 @@ public class JavaInvaders extends ApplicationAdapter {
 		return false;
 	}
 
+         /**
+     * Avança para o próximo nível se a pontuação atingir os critérios especificados.
+     * Salva o estado do jogo ao avançar de nível.
+     */
 	public void nextLevel() {
 		if( score >= 15 && current_level == 1) {
             gameState = GameState.LEVEL_CHANGE;
@@ -568,6 +659,10 @@ public class JavaInvaders extends ApplicationAdapter {
 
 
 	}
+      /**
+     * Renderiza o menu principal do jogo.
+     * Processa as entradas do usuário para iniciar o jogo, carregar um jogo salvo ou sair.
+     */
     private void renderMenu() {
         try {
             stage.act(Gdx.graphics.getDeltaTime());
@@ -599,7 +694,10 @@ public class JavaInvaders extends ApplicationAdapter {
    
     
 
-        
+        /**
+     * Renderiza o jogo em andamento.
+     * Processa a movimentação da nave, disparo de mísseis, movimentação dos inimigos e colisões.
+     */
     private void renderGame() {
         ScreenUtils.clear(1, 0, 0, 1);
         batch.begin();
@@ -662,7 +760,10 @@ public class JavaInvaders extends ApplicationAdapter {
         
         batch.end();
     }
-
+         /**
+     * Renderiza a tela de game over.
+     * Mostra a pontuação final e permite que o jogador retorne ao menu principal.
+     */
     private void renderGameOver() {
         try {
             batch.begin();
@@ -677,7 +778,10 @@ public class JavaInvaders extends ApplicationAdapter {
         }
         batch.end();
     }
-
+        /**
+     * Reseta o jogo, reiniciando a pontuação, vida, nível atual, e posições.
+     * Limpa os inimigos e power-ups do jogo.
+     */
     private void resetGame() {
         score = 0;
         power = 3;
@@ -691,6 +795,9 @@ public class JavaInvaders extends ApplicationAdapter {
         powerUps.clear();
         clearAllSaves();
     }
+    /**
+     * Limpa todos os jogos salvos, removendo as preferências armazenadas.
+     */
     private void clearAllSaves() {
         for (int i = 1; i <= 3; i++) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + i);
@@ -698,6 +805,10 @@ public class JavaInvaders extends ApplicationAdapter {
             prefs.flush();
         }
     }
+     /**
+     * Renderiza a tela de transição de nível.
+     * Mostra a mensagem de nível atual e transita para o próximo estado após a duração definida.
+     */
 
     private void renderLevelChange() {
         ScreenUtils.clear(0.75f, 0.75f, 0.75f, 1);
@@ -722,6 +833,10 @@ public class JavaInvaders extends ApplicationAdapter {
         }
     }
 }
+        /**
+     * Renderiza a tela inicial do jogo.
+     * Mostra a mensagem de preparação e conta o tempo para iniciar o jogo.
+     */
     private void renderinitialgame() {
         ScreenUtils.clear(1, 0, 0, 1);
         batch.begin();
@@ -729,7 +844,6 @@ public class JavaInvaders extends ApplicationAdapter {
         startFont.draw(batch, "Prepare-se para iniciar o jogo", Gdx.graphics.getWidth() / 2 - 300, Gdx.graphics.getHeight() / 2);
         batch.end();
 
-        // Defina a textura do inimigo com base no nível atual
         switch (current_level) {
             case 1:
                 tEnemy = new Texture("enemy1.png");
@@ -759,6 +873,11 @@ public class JavaInvaders extends ApplicationAdapter {
             isGameStarted = false;
         }
     }
+         /**
+     * Salva o estado atual do jogo em um slot específico.
+     * 
+     * @param slot O número do slot onde o jogo será salvo.
+     */
 
         private void saveGame(int slot) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
@@ -769,6 +888,11 @@ public class JavaInvaders extends ApplicationAdapter {
             prefs.putFloat("posY", posY);
             prefs.flush();
         }
+        /**
+     * Carrega o estado do jogo a partir de um slot específico.
+     * 
+     * @param slot O número do slot de onde o jogo será carregado.
+     */
 
         private void loadGame(int slot) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
@@ -790,6 +914,10 @@ public class JavaInvaders extends ApplicationAdapter {
                 gameState = GameState.INITIALIZING; // Alterar para INITIALIZING para preparar o jogo antes de jogar
             }
         }
+        /**
+         * Renderiza o menu de salvamento do jogo
+         * permite ao jogador salvar o jogo em diferentes slots
+         */
 
         private void renderSaveMenu() {
              Gdx.gl.glClearColor(0, 0, 0.2f, 1);
@@ -823,7 +951,10 @@ public class JavaInvaders extends ApplicationAdapter {
         }
         
 
-
+            /**
+     * Configura os botões do menu principal do jogo.
+     * Adiciona os botões de iniciar jogo, sair, carregar jogo salvo e multiplayer.
+     */
         private void setupButtons() {
             if (startButton == null) {
                 startButton = new TextButton("Start Game", textButtonStyle);
@@ -868,7 +999,10 @@ public class JavaInvaders extends ApplicationAdapter {
             });
         }
     
-        
+         /**
+     * Adiciona os botões do menu de salvamento do jogo.
+     * Permite ao jogador carregar jogos salvos dos diferentes slots.
+     */
         private void addSaveMenuButtons() {
             if (loadButton1 == null) {
                 loadButton1 = new TextButton("Load Slot 1", textButtonStyle);
@@ -888,7 +1022,10 @@ public class JavaInvaders extends ApplicationAdapter {
                 stage.addActor(loadButton3);
             }
         }
-        
+             /**
+     * Remove os botões do menu de salvamento do jogo.
+     * Limpa os botões de carregar jogo dos diferentes slots.
+     */
         private void removeSaveMenuButtons() {
             if (loadButton1 != null) {
                 loadButton1.remove();
@@ -903,7 +1040,10 @@ public class JavaInvaders extends ApplicationAdapter {
                 loadButton3 = null;
             }
         }
-
+            /**
+     * Renderiza o modo de jogo multiplayer.
+     * Adiciona movimentação, disparo e colisões para duas naves.
+     */
         private void renderGameMultiplayer() {
             ScreenUtils.clear(0, 0, 0, 1);
             batch.begin();

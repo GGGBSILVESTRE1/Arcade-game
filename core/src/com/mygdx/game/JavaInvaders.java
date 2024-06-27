@@ -14,11 +14,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -75,12 +73,16 @@ public class JavaInvaders extends ApplicationAdapter {
      * Método de criação do jogo.
      */
     public void create() {
-            // avaliar se o jogo é multiplayer 
+        try {
             isGamemultiplayer = 0;
 
             //inicialização da nave2 e sua textura 
+            try {
             tNave2 = new Texture("Nave.png");
             nave2 = new Sprite(tNave2);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             posX2 = 1000;  // Posição inicial da segunda nave
             posY2 = 0;
@@ -114,6 +116,7 @@ public class JavaInvaders extends ApplicationAdapter {
         //parametro para inicialização do jogo
         isGameStarted = false;
         current_level = 1;
+        try {
         ini = new Texture("ini.jpg");
         img_3 = new Texture("c.jpg");
         img_2 = new Texture("b.png");
@@ -137,6 +140,9 @@ public class JavaInvaders extends ApplicationAdapter {
         tEnemy3 = new Texture("enemy3.png");
         tEnemy2 = new Texture("enemy2.png");
         tEnemy = new Texture("enemy1.png");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         enemies = new Array<Enemy>();
         powerUps = new Array<Rectangle>();
@@ -144,6 +150,7 @@ public class JavaInvaders extends ApplicationAdapter {
         score = 0;
         power = 3;
         powerUpSpeed = 4;
+        try {
         generator = new FreeTypeFontGenerator(Gdx.files.internal("font.ttf"));
         
         parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -162,11 +169,17 @@ public class JavaInvaders extends ApplicationAdapter {
         startParameter.size = 50;
         startParameter.color = Color.WHITE;
         startFont = generator.generateFont(startParameter);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         game_win = false;
         gameover = false;
         powerUp_1 = false;
         powerUp_2 = false;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
        
     }
 
@@ -252,6 +265,8 @@ public class JavaInvaders extends ApplicationAdapter {
  * mudar de tela para evitar vazamentos de memória.
  */
     public void dispose() {
+        try {
+
         if (stage != null) {
             stage.dispose();
             stage = null;
@@ -327,6 +342,9 @@ public class JavaInvaders extends ApplicationAdapter {
             startFont.dispose();
             startFont = null;
         }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
     }
    /**
      * Move a primeira nave com base nas teclas de seta pressionadas.
@@ -456,11 +474,16 @@ public class JavaInvaders extends ApplicationAdapter {
 
     private void spawnEnemies() {
         if (!game_win && !gameover) {
+            try {
             Rectangle enemyRectangle = new Rectangle(MathUtils.random(0, Gdx.graphics.getWidth() - tEnemy.getWidth()),
                     Gdx.graphics.getHeight(), tEnemy.getWidth(), tEnemy.getHeight());
             int enemyHealth = current_level;
             enemies.add(new Enemy(enemyRectangle, enemyHealth));
             lastEnemyTime = TimeUtils.nanoTime();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
         }
     }
      /**
@@ -468,9 +491,13 @@ public class JavaInvaders extends ApplicationAdapter {
      */
 
     private void spawnPowerup() {
+        try {
         Rectangle powerup = new Rectangle(MathUtils.random(0, Gdx.graphics.getWidth() - tPowerUp.getWidth()),
                 Gdx.graphics.getHeight(), tPowerUp.getWidth(), tPowerUp.getHeight());
         powerUps.add(powerup);
+        } catch (Exception e ) {
+            e.printStackTrace();
+        }
     }
     /**
      * Move os power-ups para baixo na tela.
@@ -479,6 +506,7 @@ public class JavaInvaders extends ApplicationAdapter {
      */
 
     private void movePowerup() {
+        try {
         for (Iterator<Rectangle> iter = powerUps.iterator(); iter.hasNext();) {
             Rectangle powerUp = iter.next();
             powerUp.y -= powerUpSpeed;
@@ -512,6 +540,9 @@ public class JavaInvaders extends ApplicationAdapter {
 				
 			}
 		}
+        } catch (Exception e ) {
+            e.printStackTrace();
+        }
 	}
 
 
@@ -639,6 +670,7 @@ public class JavaInvaders extends ApplicationAdapter {
      * Salva o estado do jogo ao avançar de nível.
      */
 	public void nextLevel() {
+        try {
 		if( score >= 15 && current_level == 1) {
             gameState = GameState.LEVEL_CHANGE;
             current_level = 2;
@@ -655,10 +687,13 @@ public class JavaInvaders extends ApplicationAdapter {
 			current_level = 4;
 			game_win = true;
             saveGame(1);
+        }}catch (Exception e ) {
+                e.printStackTrace();
+            }
 		}
 
 
-	}
+	
       /**
      * Renderiza o menu principal do jogo.
      * Processa as entradas do usuário para iniciar o jogo, carregar um jogo salvo ou sair.
@@ -783,6 +818,7 @@ public class JavaInvaders extends ApplicationAdapter {
      * Limpa os inimigos e power-ups do jogo.
      */
     private void resetGame() {
+        try {
         score = 0;
         power = 3;
         current_level = 1;
@@ -794,16 +830,23 @@ public class JavaInvaders extends ApplicationAdapter {
         enemies.clear();
         powerUps.clear();
         clearAllSaves();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     /**
      * Limpa todos os jogos salvos, removendo as preferências armazenadas.
      */
     private void clearAllSaves() {
+        try {
         for (int i = 1; i <= 3; i++) {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + i);
             prefs.clear();
             prefs.flush();
         }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
     }
      /**
      * Renderiza a tela de transição de nível.
@@ -811,6 +854,7 @@ public class JavaInvaders extends ApplicationAdapter {
      */
 
     private void renderLevelChange() {
+        try {
         ScreenUtils.clear(0.75f, 0.75f, 0.75f, 1);
         batch.begin();
 
@@ -832,12 +876,17 @@ public class JavaInvaders extends ApplicationAdapter {
                 break;
         }
     }
+     }catch (Exception e) {
+        e.printStackTrace();
+    }
+    
 }
         /**
      * Renderiza a tela inicial do jogo.
      * Mostra a mensagem de preparação e conta o tempo para iniciar o jogo.
      */
     private void renderinitialgame() {
+        try {
         ScreenUtils.clear(1, 0, 0, 1);
         batch.begin();
         startFont.draw(batch, "Level " + current_level, Gdx.graphics.getWidth() / 2 - 100, Gdx.graphics.getHeight() / 2 + 50);
@@ -872,6 +921,9 @@ public class JavaInvaders extends ApplicationAdapter {
             gameState = GameState.PLAYING;
             isGameStarted = false;
         }
+    } catch (Exception e ) {
+        e.printStackTrace();
+    }
     }
          /**
      * Salva o estado atual do jogo em um slot específico.
@@ -880,6 +932,7 @@ public class JavaInvaders extends ApplicationAdapter {
      */
 
         private void saveGame(int slot) {
+            try {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
             prefs.putInteger("score", score);
             prefs.putInteger("power", power);
@@ -887,6 +940,9 @@ public class JavaInvaders extends ApplicationAdapter {
             prefs.putFloat("posX", posX);
             prefs.putFloat("posY", posY);
             prefs.flush();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         /**
      * Carrega o estado do jogo a partir de um slot específico.
@@ -895,6 +951,7 @@ public class JavaInvaders extends ApplicationAdapter {
      */
 
         private void loadGame(int slot) {
+            try {
             Preferences prefs = Gdx.app.getPreferences("MyGamePreferences" + slot);
             score = prefs.getInteger("score", 0);
             power = prefs.getInteger("power", 3);
@@ -913,6 +970,9 @@ public class JavaInvaders extends ApplicationAdapter {
             } else {
                 gameState = GameState.INITIALIZING; // Alterar para INITIALIZING para preparar o jogo antes de jogar
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         }
         /**
          * Renderiza o menu de salvamento do jogo
@@ -920,6 +980,7 @@ public class JavaInvaders extends ApplicationAdapter {
          */
 
         private void renderSaveMenu() {
+            try {
              Gdx.gl.glClearColor(0, 0, 0.2f, 1);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
             addSaveMenuButtons();
@@ -948,6 +1009,9 @@ public class JavaInvaders extends ApplicationAdapter {
                 saveGame(3);
                 gameState = GameState.INITIALIZING;
             }
+        }catch (Exception e){
+                e.printStackTrace();
+            }
         }
         
 
@@ -956,6 +1020,7 @@ public class JavaInvaders extends ApplicationAdapter {
      * Adiciona os botões de iniciar jogo, sair, carregar jogo salvo e multiplayer.
      */
         private void setupButtons() {
+            try {
             if (startButton == null) {
                 startButton = new TextButton("Start Game", textButtonStyle);
                 startButton.setPosition(Gdx.graphics.getWidth() / 2 - 50, Gdx.graphics.getHeight() / 2 + 50);
@@ -997,6 +1062,9 @@ public class JavaInvaders extends ApplicationAdapter {
                     gameState = GameState.INITIALIZING;
                 }
             });
+         } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     
          /**
@@ -1048,8 +1116,10 @@ public class JavaInvaders extends ApplicationAdapter {
             ScreenUtils.clear(0, 0, 0, 1);
             batch.begin();
             try {
+
                 isGamemultiplayer = 1;
                 if (!gameover) {
+                    powerUps.clear();
                     nextLevel();
                     Spaceshoot();
                     Spaceshoot2(); // Adiciona o atirar da segunda nave
